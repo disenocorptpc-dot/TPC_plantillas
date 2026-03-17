@@ -164,7 +164,7 @@
             position: absolute; cursor: grab; z-index: 100; display: flex;
             align-items: center; justify-content: center;
             color: var(--logo-color-current); /* the magic property to style inline svg */
-            width: 35%; /* Fixed solid width relative to canvas */
+            width: 25%; /* Controlled via JS slider */
         }
         .logo-drag:active { cursor: grabbing; }
         
@@ -304,6 +304,9 @@
                 <option value="#EDECE4">Beige</option>
                 <option value="#B88F69">Dorado</option>
             </select>
+
+            <label style="margin-top: 5px;">Tamaño del Logotipo (<span id="logo-size-val">25</span>%)</label>
+            <input type="range" id="in-logo-size" min="10" max="30" value="25" style="width:100%; margin-bottom: 15px;">
             
             <div class="dropzone-sidebar" id="dropzone">
                 <div style="font-size: 13px; font-weight: bold; margin-bottom: 5px;">Cargar imagen propia</div>
@@ -427,6 +430,8 @@
         
         const logoPreset = document.getElementById('in-logo-preset');
         const logoColor = document.getElementById('in-logo-color');
+        const logoSize = document.getElementById('in-logo-size');
+        const logoSizeVal = document.getElementById('logo-size-val');
         const logoDrag = document.getElementById('logo-drag');
         
         const guideV = document.getElementById('guide-v');
@@ -463,6 +468,13 @@
         logoColor.addEventListener('change', (e) => {
             // we override CSS var to automatically color svg
             document.documentElement.style.setProperty('--logo-color-current', e.target.value);
+        });
+
+        // Logo Resize
+        logoSize.addEventListener('input', (e) => {
+            logoSizeVal.innerText = e.target.value;
+            logoDrag.style.width = e.target.value + '%';
+            centerLogo();
         });
 
         // Theme
