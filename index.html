@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Generador Institucional - The Palace Company</title>
+    <!-- Fuentes Adobe Typekit -->
+    <link rel="stylesheet" href="https://use.typekit.net/ljc6iiy.css">
+    
+    <!-- Librería html2canvas para exportar a imagen -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        :root {
+            --palace-blue: #254D6E;
+            --palace-beige: #EDECE4;
+            --palace-gray: #E0E5E5;
+            --palace-gold: #B88F69;
+            --palace-white: #FFFFFF;
+        }
+        
+        body {
+            margin: 0; padding: 0; 
+            font-family: 'freight-sans-pro', sans-serif;
+            display: flex; height: 100vh; 
+            background: #111; color: #fff;
+            overflow: hidden;
+        }
+
+        /* Sidebar Control Panel */
+        .sidebar {
+            width: 480px; 
+            background: #1b1b1b; 
+            padding: 30px; 
+            overflow-y: auto;
+            border-right: 1px solid #333;
+            box-sizing: border-box;
+            box-shadow: 2px 0 20px rgba(0,0,0,0.5);
+            z-index: 100;
+        }
+        
+        /* Custom Scrollbar */
+        .sidebar::-webkit-scrollbar { width: 8px; }
+        .sidebar::-webkit-scrollbar-track { background: #111; }
+        .sidebar::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
+        .sidebar::-webkit-scrollbar-thumb:hover { background: var(--palace-gold); }
+
+        .sidebar h2 {
+            color: var(--palace-gold); 
+            font-size: 26px; 
+            margin-top: 0; 
+            margin-bottom: 25px;
+            font-weight: 300;
+            letter-spacing: 1px;
+            font-family: 'freight-sans-pro', sans-serif;
+        }
+
+        .section-title {
+            font-size: 13px;
+            color: #888;
+            border-bottom: 1px solid #333;
+            margin: 30px 0 20px 0;
+            padding-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 700;
+        }
+
+        .form-group { margin-bottom: 20px; }
+        .form-row { display: flex; gap: 15px; margin-bottom: 20px; }
+        .form-row .form-group { flex: 1; margin-bottom: 0; }
+        
+        .form-group label { 
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 10px; font-size: 12px; 
+            text-transform: uppercase; color: #aaa; letter-spacing: 1px; 
+        }
+
+        .form-group input[type="text"], .form-group input[type="number"], .form-group textarea, .form-group select { 
+            width: 100%; padding: 12px; box-sizing: border-box; 
+            background: #222; color: #eee; border: 1px solid #444; 
+            border-radius: 4px; font-family: inherit; font-size: 14px;
+            transition: all 0.2s;
+        }
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+            outline: none; border-color: var(--palace-gold); background: #2a2a2a;
+        }
+        .form-group textarea { resize: vertical; min-height: 70px; }
+
+        /* Drag & Drop Area Sidebar */
+        .dropzone-sidebar {
+            border: 2px dashed #555;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            background: #222;
+            color: #aaa;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .dropzone-sidebar:hover, .dropzone-sidebar.dragover {
+            border-color: var(--palace-gold);
+            background: rgba(184, 143, 105, 0.1);
+            color: var(--palace-gold);
+        }
+        .dropzone-sidebar input[type="file"] {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0; cursor: pointer;
+        }
+
+        .btn {
+            background: var(--palace-gold); 
+            color: #111; border: none; padding: 16px; width: 100%;
+            font-size: 16px; cursor: pointer; text-transform: uppercase; 
+            font-weight: bold; border-radius: 4px; letter-spacing: 2px;
+            margin-top: 30px; transition: background 0.2s;
+        }
+        .btn:hover { background: #cf9b6a; transform: translateY(-1px); }
+
+        .toggle-btn {
+            background: #333; color: #fff; border: none; padding: 6px 12px; 
+            font-size: 10px; cursor: pointer; border-radius: 4px; text-transform: uppercase;
+            font-weight: bold; letter-spacing: 1px; transition: all 0.2s;
+        }
+        .toggle-btn.active { background: var(--palace-gold); color: #111; }
+
+        /* Preview Canvas Area */
+        .preview-container {
+            flex: 1;
+            display: flex; align-items: center; justify-content: center;
+            background: #000; overflow: hidden; padding: 40px;
+            position: relative;
+            background-image: radial-gradient(circle at center, #1a1a1a 0%, #000 100%);
+        }
+
+        .canvas-wrapper {
+            box-shadow: 0 30px 60px rgba(0,0,0,0.8);
+            transition: transform 0.2s ease-out;
+            transform-origin: center center;
+            position: relative;
+        }
+
+        /* Canvas Default: 1080x1350 */
+        .canvas {
+            width: 1080px; height: 1350px;
+            background-color: var(--palace-blue); 
+            color: var(--palace-beige);
+            position: relative;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 9% 8%;
+            box-sizing: border-box;
+            text-align: center;
+            transition: background-color 0.3s ease;
+            overflow: hidden; /* To keep logo inside visual bounds if dragged off */
+        }
+
+        /* Elegant Frame Styles */
+        .frame-container {
+            position: absolute;
+            top: 4.5%; bottom: 4.5%; left: 4.5%; right: 4.5%;
+            pointer-events: none;
+            z-index: 1;
+            border: 1px solid rgba(224, 229, 229, 0.4);
+            padding: 8px;
+        }
+        .frame-inner {
+            width: 100%; height: 100%;
+            border: 1px solid rgba(224, 229, 229, 0.2);
+            box-sizing: border-box;
+            position: relative;
+        }
+        
+        .corner-ornament {
+            position: absolute; width: 45px; height: 45px; fill: none;
+            stroke: rgba(224, 229, 229, 0.5); stroke-width: 1.5;
+        }
+        .co-tl { top: -4px; left: -4px; }
+        .co-tr { top: -4px; right: -4px; transform: rotate(90deg); }
+        .co-bl { bottom: -4px; left: -4px; transform: rotate(-90deg); }
+        .co-br { bottom: -4px; right: -4px; transform: rotate(180deg); }
+
+        /* Smart Guides */
+        .smart-guide {
+            position: absolute;
+            background: var(--palace-gold);
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.1s ease;
+        }
+        .guide-v { top: 0; bottom: 0; left: 50%; width: 1px; transform: translateX(-50%); box-shadow: 0 0 5px var(--palace-gold); }
+        .guide-h { left: 0; right: 0; top: 50%; height: 1px; transform: translateY(-50%); box-shadow: 0 0 5px var(--palace-gold); }
+
+        /* Logo Drag & Drop Element */
+        .logo-drag {
+            position: absolute;
+            cursor: grab;
+            z-index: 100;
+            /* Flex layout helps with centering the image inside the drag box */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .logo-drag:active { cursor: grabbing; }
+        .logo-drag img {
+            max-width: 450px; 
+            max-height: 120px;
+            object-fit: contain;
+            pointer-events: none; /* Let drag box catch events */
+            user-select: none;
+        }
+        .logo-drag.dragging { opacity: 0.9; }
+
+        /* Color Themes */
+        .theme-blue { background-color: var(--palace-blue); color: var(--palace-beige); }
+        .theme-blue .frame-container { border-color: rgba(224, 229, 229, 0.4); }
+        .theme-blue .frame-inner { border-color: rgba(224, 229, 229, 0.2); }
+        .theme-blue .corner-ornament { stroke: rgba(224, 229, 229, 0.6); }
+        .theme-blue .text-gray, .theme-blue .subtitle { color: var(--palace-gray); opacity: 0.9;}
+        
+        .theme-beige { background-color: var(--palace-beige); color: var(--palace-blue); }
+        .theme-beige .frame-container { border-color: rgba(37, 77, 110, 0.4); }
+        .theme-beige .frame-inner { border-color: rgba(37, 77, 110, 0.2); }
+        .theme-beige .corner-ornament { stroke: rgba(37, 77, 110, 0.6); }
+        .theme-beige .text-gray, .theme-beige .subtitle { color: rgba(37, 77, 110, 0.8); }
+        
+        .theme-white { background-color: var(--palace-white); color: var(--palace-blue); }
+        .theme-white .frame-container { border-color: rgba(37, 77, 110, 0.4); }
+        .theme-white .frame-inner { border-color: rgba(37, 77, 110, 0.2); }
+        .theme-white .corner-ornament { stroke: rgba(37, 77, 110, 0.6); }
+        .theme-white .text-gray, .theme-white .subtitle { color: rgba(37, 77, 110, 0.8); }
+
+        /* Alignment */
+        .align-center { text-align: center; align-items: center; }
+        .align-left { text-align: left; align-items: flex-start; }
+        .align-right { text-align: right; align-items: flex-end; }
+
+        /* Content Elements */
+        .content-wrapper {
+            display: flex; flex-direction: column; justify-content: center; z-index: 10;
+            width: 100%; align-items: inherit;
+        }
+
+        .ribbon-icon { width: 55px; margin-bottom: 50px; z-index: 10; display: none; margin-top: 30px;}
+        .show-ribbon .ribbon-icon { display: block; }
+
+        .text-top {
+            font-size: 32px; line-height: 1.4; 
+            margin: 0 0 30px 0; max-width: 82%; font-weight: 300; 
+            font-family: 'freight-sans-pro', "Segoe UI", sans-serif;
+            letter-spacing: 0.5px;
+        }
+
+        .main-name {
+            font-size: 85px; font-weight: 700; letter-spacing: 3px;
+            text-transform: uppercase; margin: 0 0 15px 0;
+            font-family: 'freight-sans-compressed-pro', "Impact", sans-serif;
+            line-height: 1.05;
+        }
+
+        .subtitle {
+            font-size: 32px; font-style: italic; 
+            margin: 0 0 50px 0; max-width: 82%; font-weight: 300; 
+            font-family: 'freight-sans-pro', "Georgia", serif;
+            letter-spacing: 1px;
+        }
+
+        .separator {
+            font-size: 14px; margin-bottom: 50px; letter-spacing: 20px; 
+            display: flex; gap: 20px; justify-content: inherit; width: 100%;
+        }
+        .separator-diamond {
+            width: 8px; height: 8px; transform: rotate(45deg);
+            background-color: currentColor; display: inline-block;
+        }
+
+        .body-text {
+            font-size: 34px; line-height: 1.5;
+            margin: 0 0 30px 0; max-width: 85%; font-weight: 300; 
+            font-family: 'freight-sans-pro', "Segoe UI", sans-serif;
+        }
+
+        .footer-bottom {
+            margin-top: 80px; 
+            font-size: 20px; letter-spacing: 5px; text-transform: uppercase; 
+            line-height: 1.6; z-index: 10; font-family: 'freight-sans-pro', sans-serif;
+            width: 100%; text-align: inherit;
+        }
+        
+        .footer-t1 { margin: 0 0 8px 0; font-weight: 700; }
+        .footer-t2 { margin: 0; font-size: 18px; font-weight: 300; letter-spacing: 3px; }
+
+        .empty { display: none !important; }
+
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <h2>Plantillas The Palace Company</h2>
+        
+        <div class="form-group">
+            <label>Tipo de Plantilla</label>
+            <select id="in-template-type">
+                <option value="obituario">Obituario Institucional</option>
+                <option value="anuncio">Anuncio General</option>
+            </select>
+        </div>
+
+        <div class="section-title">Ajustes de Diseño</div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>Formato / Resolución</label>
+                <select id="in-size">
+                    <option value="1080x1080">Cuadrado (Post) - 1080x1080</option>
+                    <option value="1080x1350" selected>Retrato - 1080x1350</option>
+                    <option value="1080x1920">Historia / Reel - 1080x1920</option>
+                    <option value="1200x630">Web Horizontal - 1200x630</option>
+                    <option value="custom">Personalizado</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-row" id="custom-size-row" style="display: none;">
+            <div class="form-group">
+                <label>Ancho (px)</label>
+                <input type="number" id="in-width" value="1080">
+            </div>
+            <div class="form-group">
+                <label>Alto (px)</label>
+                <input type="number" id="in-height" value="1350">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>Color Institucional</label>
+                <select id="in-theme">
+                    <option value="theme-blue">Fondo Azul / Texto Beige</option>
+                    <option value="theme-beige">Fondo Beige / Texto Azul</option>
+                    <option value="theme-white">Fondo Blanco / Texto Azul</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Alineación</label>
+                <select id="in-align">
+                    <option value="align-center">Centrado</option>
+                    <option value="align-left">Izquierda</option>
+                    <option value="align-right">Derecha</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="section-title">Logotipo Institucional</div>
+        <div class="form-group">
+            <select id="in-logo-preset" style="margin-bottom: 15px;">
+                <option value="file://10.0.37.24/medios/Marcas%20Bienal%20-%20Humman/The%20Palace%20Company/01_Identidad/01_1_Logotipo_Principal/RGB/SVG/The_Palace_Company_Logotipo_Principal_Negativo.svg">Principal Negativo</option>
+                <option value="file://10.0.37.24/medios/Marcas%20Bienal%20-%20Humman/The%20Palace%20Company/01_Identidad/01_3_Logotipo_Secundario/RGB/SVG/The_Palace_Company_Logotipo_Secundario_RGB_Azul.svg" selected>Secundario Azul</option>
+                <option value="none">Ocultar Logotipo</option>
+            </select>
+            
+            <div class="dropzone-sidebar" id="dropzone">
+                <div style="font-size: 13px; font-weight: bold; margin-bottom: 5px;">Reemplazar Logo (Arrastrar aquí)</div>
+                <div style="font-size: 11px; opacity: 0.7;">SVG, PNG, JPG transaparente</div>
+                <input type="file" id="in-logo-file" accept="image/png, image/jpeg, image/svg+xml">
+            </div>
+            <p style="font-size: 11px; color:#aaa; margin-top:8px;">* Para ajustarlo, arrastra el logotipo directamente sobre el diseño con el cursor.</p>
+        </div>
+
+        <div class="section-title">Contenidos</div>
+        
+        <!-- OBITUARIO FIELDS -->
+        <div id="fields-obituario">
+            <div class="form-group">
+                <label>Moño de Luto <button type="button" class="toggle-btn" id="btn-ribbon">Desactivado</button></label>
+            </div>
+            <div class="form-group">
+                <label>Texto Superior</label>
+                <textarea id="o-top-text">Lamentamos el sensible fallecimiento de</textarea>
+            </div>
+            <div class="form-group">
+                <label>Nombre del Fallecido</label>
+                <input type="text" id="o-main-name" value="DIEGO OSUNA MIRANDA">
+            </div>
+            <div class="form-group">
+                <label>Parentesco / Cargo (Subtítulo)</label>
+                <textarea id="o-subtitle">Hijo de Eduardo Osuna, Director General.</textarea>
+            </div>
+            <div class="form-group">
+                <label>Párrafo Principal</label>
+                <textarea id="o-p1">Acompañamos con respeto y solidaridad a su familia en este momento de profundo dolor ante esta irreparable pérdida.</textarea>
+            </div>
+            <div class="form-group">
+                <label>Párrafo Secundario</label>
+                <textarea id="o-p2">Nos unimos en oración por su eterno descanso.</textarea>
+            </div>
+            <div class="form-group">
+                <label>Firma / Remitente</label>
+                <input type="text" id="o-f1" value="THE PALACE COMPANY">
+            </div>
+            <div class="form-group">
+                <label>Fecha / Ubicación</label>
+                <input type="text" id="o-f2" value="MARZO, 2026.">
+            </div>
+        </div>
+
+        <!-- ANUNCIO FIELDS -->
+        <div id="fields-anuncio" style="display:none;">
+            <div class="form-group">
+                <label>Título Principal</label>
+                <input type="text" id="a-main-name" value="COMUNICADO OFICIAL">
+            </div>
+            <div class="form-group">
+                <label>Subtítulo</label>
+                <textarea id="a-subtitle">A todos nuestros colaboradores:</textarea>
+            </div>
+            <div class="form-group">
+                <label>Cuerpo del Mensaje</label>
+                <textarea id="a-p1">Los invitamos a revisar los nuevos protocolos de excelencia en servicio que entran en vigor a partir del próximo mes. Agradecemos su compromiso constante.</textarea>
+            </div>
+            <div class="form-group">
+                <label>Fecha</label>
+                <input type="text" id="a-f2" value="MARZO, 2026.">
+            </div>
+        </div>
+
+        <button class="btn" onclick="downloadImage()">⬇ Exportar Imagen (PNG)</button>
+    </div>
+
+    <!-- PREVIEW AREA -->
+    <div class="preview-container">
+        
+        <div class="canvas-wrapper">
+            
+            <div class="canvas theme-blue align-center" id="export-canvas">
+                
+                <!-- Smart Guides (only visible when dragging logo) -->
+                <div class="smart-guide guide-v" id="guide-v"></div>
+                <div class="smart-guide guide-h" id="guide-h"></div>
+                
+                <!-- FRAME -->
+                <div class="frame-container" id="frame-bound">
+                    <div class="frame-inner">
+                        <svg class="corner-ornament co-tl" viewBox="0 0 20 20"><path d="M0,0 L20,0 L20,1 L1,1 L1,20 L0,20 Z" /><circle cx="4" cy="4" r="1.5" fill="currentColor" stroke="none"/></svg>
+                        <svg class="corner-ornament co-tr" viewBox="0 0 20 20"><path d="M0,0 L20,0 L20,1 L1,1 L1,20 L0,20 Z" /><circle cx="4" cy="4" r="1.5" fill="currentColor" stroke="none"/></svg>
+                        <svg class="corner-ornament co-bl" viewBox="0 0 20 20"><path d="M0,0 L20,0 L20,1 L1,1 L1,20 L0,20 Z" /><circle cx="4" cy="4" r="1.5" fill="currentColor" stroke="none"/></svg>
+                        <svg class="corner-ornament co-br" viewBox="0 0 20 20"><path d="M0,0 L20,0 L20,1 L1,1 L1,20 L0,20 Z" /><circle cx="4" cy="4" r="1.5" fill="currentColor" stroke="none"/></svg>
+                    </div>
+                </div>
+                
+                <!-- DRAGGABLE LOGO -->
+                <div class="logo-drag" id="logo-drag">
+                    <img id="logo-img" src="file://10.0.37.24/medios/Marcas%20Bienal%20-%20Humman/The%20Palace%20Company/01_Identidad/01_3_Logotipo_Secundario/RGB/SVG/The_Palace_Company_Logotipo_Secundario_RGB_Azul.svg" onerror="this.onerror=null; this.src=''; this.style.display='none';">
+                </div>
+
+                <div class="content-wrapper">
+                    <!-- Mourning Ribbon -->
+                    <img src="data:image/svg+xml;utf8,<svg viewBox='0 0 46 74' fill='none' xmlns='http://www.w3.org/2000/svg'><path d='M23 45L45.5 73.5H30.5L16.5 49.5' fill='%23131313'/><path d='M23 45L0.5 73.5H15.5L29.5 49.5' fill='%232A2A2A'/><path d='M23 45C33 30 40 18 35 7C30 -4 16 -4 11 7C6 18 13 30 23 45Z' fill='black'/></svg>" class="ribbon-icon" />
+
+                    <!-- Texts -->
+                    <p class="text-top text-gray empty" id="el-top-text"></p>
+                    <h1 class="main-name empty" id="el-main-name"></h1>
+                    <p class="subtitle empty" id="el-subtitle"></p>
+                    
+                    <div class="separator" id="el-separator">
+                        <div class="separator-diamond"></div>
+                        <div class="separator-diamond"></div>
+                        <div class="separator-diamond"></div>
+                    </div>
+                    
+                    <p class="body-text text-gray empty" id="el-p1"></p>
+                    <p class="body-text text-gray empty" id="el-p2"></p>
+                </div>
+                
+                <div class="footer-bottom">
+                    <p class="footer-t1 empty" id="el-f1"></p>
+                    <p class="footer-t2 empty" id="el-f2"></p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script>
+        const canvas = document.getElementById('export-canvas');
+        const sizeSelect = document.getElementById('in-size');
+        const customSizeRow = document.getElementById('custom-size-row');
+        const widthInput = document.getElementById('in-width');
+        const heightInput = document.getElementById('in-height');
+        const themeSelect = document.getElementById('in-theme');
+        const alignSelect = document.getElementById('in-align');
+        const ribbonBtn = document.getElementById('btn-ribbon');
+        const logoPreset = document.getElementById('in-logo-preset');
+        const templateType = document.getElementById('in-template-type');
+        
+        const logoDrag = document.getElementById('logo-drag');
+        const logoImg = document.getElementById('logo-img');
+        const guideV = document.getElementById('guide-v');
+        const guideH = document.getElementById('guide-h');
+        
+        let canvasW = 1080;
+        let canvasH = 1350;
+
+        // Template logic
+        templateType.addEventListener('change', (e) => {
+            const val = e.target.value;
+            if(val === 'obituario') {
+                document.getElementById('fields-obituario').style.display = 'block';
+                document.getElementById('fields-anuncio').style.display = 'none';
+            } else {
+                document.getElementById('fields-obituario').style.display = 'none';
+                document.getElementById('fields-anuncio').style.display = 'block';
+                // ensure ribbon is hidden for general announcement
+                canvas.classList.remove('show-ribbon');
+                ribbonBtn.innerText = 'Desactivado';
+                ribbonBtn.classList.remove('active');
+            }
+            updateTexts();
+        });
+
+        // Resize Logic
+        function updateSize() {
+            if (sizeSelect.value === 'custom') {
+                customSizeRow.style.display = 'flex';
+                canvasW = parseInt(widthInput.value) || 1080;
+                canvasH = parseInt(heightInput.value) || 1350;
+            } else {
+                customSizeRow.style.display = 'none';
+                const parts = sizeSelect.value.split('x');
+                canvasW = parseInt(parts[0]);
+                canvasH = parseInt(parts[1]);
+                widthInput.value = canvasW;
+                heightInput.value = canvasH;
+            }
+            canvas.style.width = canvasW + 'px';
+            canvas.style.height = canvasH + 'px';
+            
+            const ratio = canvasW / 1080;
+            
+            document.querySelector('.main-name').style.fontSize = (85 * ratio) + 'px';
+            document.querySelectorAll('.body-text').forEach(el => el.style.fontSize = (34 * ratio) + 'px');
+            document.querySelector('.text-top').style.fontSize = (32 * ratio) + 'px';
+            document.querySelector('.subtitle').style.fontSize = (32 * ratio) + 'px';
+            document.querySelector('.footer-t1').style.fontSize = (20 * ratio) + 'px';
+            document.querySelector('.footer-t2').style.fontSize = (18 * ratio) + 'px';
+            
+            document.querySelectorAll('.corner-ornament').forEach(el => {
+                el.style.width = (45 * ratio) + 'px';
+                el.style.height = (45 * ratio) + 'px';
+            });
+            document.querySelectorAll('.separator-diamond').forEach(el => {
+                el.style.width = (8 * ratio) + 'px';
+                el.style.height = (8 * ratio) + 'px';
+            });
+            
+            logoImg.style.maxWidth = (canvasW * 0.45) + 'px';
+            logoImg.style.maxHeight = (120 * ratio) + 'px';
+
+            centerLogo();
+            resizePreview();
+        }
+
+        sizeSelect.addEventListener('change', updateSize);
+        widthInput.addEventListener('input', updateSize);
+        heightInput.addEventListener('input', updateSize);
+
+        // Center Logo Function
+        function centerLogo() {
+            const lw = logoDrag.offsetWidth || 100;
+            logoDrag.style.left = (canvasW / 2 - lw / 2) + 'px';
+            logoDrag.style.top = (canvasH * 0.08) + 'px';
+        }
+
+        // Theme and Alignment
+        themeSelect.addEventListener('change', (e) => {
+            canvas.classList.remove('theme-blue', 'theme-beige', 'theme-white');
+            canvas.classList.add(e.target.value);
+            
+            if(logoPreset.value.includes('Principal_Negativo') && (e.target.value === 'theme-beige' || e.target.value === 'theme-white')){
+                logoPreset.selectedIndex = 1; 
+                setLogoFromSrc(logoPreset.value);
+            } else if (logoPreset.value.includes('Secundario_RGB_Azul') && e.target.value === 'theme-blue') {
+                logoPreset.selectedIndex = 0; 
+                setLogoFromSrc(logoPreset.value);
+            }
+        });
+
+        alignSelect.addEventListener('change', (e) => {
+            canvas.classList.remove('align-center', 'align-left', 'align-right');
+            canvas.classList.add(e.target.value);
+            const justifyMap = {'align-center': 'center', 'align-left': 'flex-start', 'align-right': 'flex-end'};
+            document.getElementById('el-separator').style.justifyContent = justifyMap[e.target.value];
+        });
+
+        // Toggle Ribbon
+        ribbonBtn.addEventListener('click', () => {
+            if(canvas.classList.contains('show-ribbon')){
+                canvas.classList.remove('show-ribbon');
+                ribbonBtn.innerText = 'Desactivado';
+                ribbonBtn.classList.remove('active');
+            } else {
+                canvas.classList.add('show-ribbon');
+                ribbonBtn.innerText = 'Activado';
+                ribbonBtn.classList.add('active');
+            }
+        });
+
+        // ==========================
+        //  LOGO LOGIC & SIDEBAR UPLOAD
+        // ==========================
+        function setLogoFromSrc(src) {
+            logoImg.style.display = 'block';
+            logoDrag.style.display = 'flex';
+            logoImg.src = src;
+            setTimeout(centerLogo, 50); // wait for image to load size
+        }
+
+        logoPreset.addEventListener('change', () => {
+            if (logoPreset.value === 'none') {
+                logoDrag.style.display = 'none';
+            } else {
+                setLogoFromSrc(logoPreset.value);
+            }
+        });
+
+        const dropzoneSidebar = document.getElementById('dropzone');
+        const fileInput = document.getElementById('in-logo-file');
+        
+        function handleFile(file) {
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    setLogoFromSrc(e.target.result);
+                    logoPreset.value = 'none'; // Clear preset
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        fileInput.addEventListener('change', function(e) {
+            if (e.target.files.length) handleFile(e.target.files[0]);
+        });
+        
+        dropzoneSidebar.addEventListener('dragover', (e) => { e.preventDefault(); dropzoneSidebar.classList.add('dragover'); });
+        dropzoneSidebar.addEventListener('dragleave', () => dropzoneSidebar.classList.remove('dragover'));
+        dropzoneSidebar.addEventListener('drop', (e) => {
+            e.preventDefault(); dropzoneSidebar.classList.remove('dragover');
+            if(e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+        });
+
+        // ==========================
+        //  DRAG AND DROP LOGO ON CANVAS
+        // ==========================
+        let isDraggingLogo = false;
+        let startX, startY, initLeft, initTop;
+
+        logoDrag.addEventListener('mousedown', (e) => {
+            isDraggingLogo = true;
+            logoDrag.classList.add('dragging');
+            startX = e.clientX;
+            startY = e.clientY;
+            initLeft = parseFloat(logoDrag.style.left) || 0;
+            initTop = parseFloat(logoDrag.style.top) || 0;
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if(!isDraggingLogo) return;
+
+            const wrapper = document.querySelector('.canvas-wrapper');
+            let scale = 1;
+            const transform = wrapper.style.transform;
+            if(transform && transform.includes('scale')) {
+                scale = parseFloat(transform.replace(/[^\d.]/g, '')) || 1;
+            }
+
+            let dx = (e.clientX - startX) / scale;
+            let dy = (e.clientY - startY) / scale;
+
+            let newL = initLeft + dx;
+            let newT = initTop + dy;
+
+            // Restrict movement to interior frame bound (4.5% margin)
+            let mX = canvasW * 0.045;
+            let mY = canvasH * 0.045;
+            let lW = logoDrag.offsetWidth;
+            let lH = logoDrag.offsetHeight;
+
+            if(newL < mX) newL = mX;
+            if(newL + lW > canvasW - mX) newL = canvasW - mX - lW;
+            if(newT < mY) newT = mY;
+            if(newT + lH > canvasH - mY) newT = canvasH - mY - lH;
+
+            // Smart Guides & Snapping -> Center
+            let gcX = canvasW / 2;
+            let gcY = canvasH / 2;
+            
+            let currentCenterX = newL + (lW / 2);
+            let currentCenterY = newT + (lH / 2);
+
+            let showsV = false, showsH = false;
+            
+            // vertical snap
+            if (Math.abs(currentCenterX - gcX) < 15) {
+                newL = gcX - (lW / 2);
+                showsV = true;
+            }
+            // horizontal snap
+            if (Math.abs(currentCenterY - gcY) < 15) {
+                newT = gcY - (lH / 2);
+                showsH = true;
+            }
+
+            guideV.style.opacity = showsV ? '1' : '0';
+            guideH.style.opacity = showsH ? '1' : '0';
+
+            logoDrag.style.left = newL + 'px';
+            logoDrag.style.top = newT + 'px';
+        });
+
+        window.addEventListener('mouseup', () => {
+            if(isDraggingLogo) {
+                isDraggingLogo = false;
+                logoDrag.classList.remove('dragging');
+                guideV.style.opacity = '0';
+                guideH.style.opacity = '0';
+            }
+        });
+
+        // ==========================
+        //  TEXT PARSING
+        // ==========================
+        function updateTexts() {
+            const isObituario = templateType.value === 'obituario';
+            
+            // Map our html target IDs to the actual input IDs based on mode
+            const fieldsMap = isObituario ? {
+                'el-top-text': 'o-top-text',
+                'el-main-name': 'o-main-name',
+                'el-subtitle': 'o-subtitle',
+                'el-p1': 'o-p1',
+                'el-p2': 'o-p2',
+                'el-f1': 'o-f1',
+                'el-f2': 'o-f2'
+            } : {
+                'el-top-text': null,
+                'el-main-name': 'a-main-name',
+                'el-subtitle': 'a-subtitle',
+                'el-p1': 'a-p1',
+                'el-p2': null,
+                'el-f1': null,
+                'el-f2': 'a-f2'
+            };
+
+            let hasBodyContent = false;
+
+            Object.keys(fieldsMap).forEach(targetId => {
+                const el = document.getElementById(targetId);
+                const inputId = fieldsMap[targetId];
+
+                if (!inputId) {
+                    el.classList.add('empty');
+                    el.innerHTML = '';
+                    return;
+                }
+
+                const inEl = document.getElementById(inputId);
+                let val = inEl.value.trim().replace(/\n/g, '<br>');
+                // Bold parse
+                val = val.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                
+                el.innerHTML = val;
+                
+                if (val === '') el.classList.add('empty');
+                else {
+                    el.classList.remove('empty');
+                    if (targetId === 'el-p1' || targetId === 'el-p2' || targetId === 'el-subtitle') hasBodyContent = true;
+                }
+            });
+
+            document.getElementById('el-separator').style.display = hasBodyContent ? 'flex' : 'none';
+        }
+        
+        ['o-top-text', 'o-main-name', 'o-subtitle', 'o-p1', 'o-p2', 'o-f1', 'o-f2',
+         'a-main-name', 'a-subtitle', 'a-p1', 'a-f2'].forEach(id => {
+            document.getElementById(id).addEventListener('input', updateTexts);
+        });
+
+        // Base Resize & Init
+        function resizePreview() {
+            const container = document.querySelector('.preview-container');
+            const wrapper = document.querySelector('.canvas-wrapper');
+            
+            const scale = Math.min(
+                (container.clientWidth - 80) / canvasW,
+                (container.clientHeight - 80) / canvasH
+            );
+            wrapper.style.transform = `scale(${scale})`;
+        }
+        window.addEventListener('resize', resizePreview);
+        
+        // Init everything
+        updateSize();
+        updateTexts();
+
+        // Download functionality
+        async function downloadImage() {
+            const btn = document.querySelector('.btn');
+            const originalText = btn.innerText;
+
+            btn.innerText = "Procesando Alta Resolución...";
+            btn.disabled = true;
+
+            try {
+                // Real size for render
+                const wrapper = document.querySelector('.canvas-wrapper');
+                const origTransform = wrapper.style.transform;
+                wrapper.style.transform = 'scale(1)';
+                
+                logoDrag.style.border = 'none'; // just in case
+                
+                await new Promise(r => setTimeout(r, 200));
+
+                const h2c = await html2canvas(canvas, {
+                    scale: 2, 
+                    useCORS: true, 
+                    allowTaint: true,
+                    backgroundColor: null,
+                    logging: false
+                });
+
+                // Restore
+                wrapper.style.transform = origTransform;
+
+                const prefix = templateType.value === 'obituario' ? 'Obituario_' : 'Anuncio_';
+                const link = document.createElement('a');
+                link.download = prefix + 'TPC_' + new Date().getTime() + '.png';
+                link.href = h2c.toDataURL('image/png', 1.0);
+                link.click();
+            } catch (err) {
+                console.error(err);
+                alert("Hubo un error al exportar la imagen. Verifica los permisos de las imágenes cargadas.");
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
